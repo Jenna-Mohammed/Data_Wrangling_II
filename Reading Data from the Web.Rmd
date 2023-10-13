@@ -1,0 +1,52 @@
+---
+title: "Reading Data from the Web"
+author: "Jenna Mohammed"
+date: '2023-10-12'
+output: html_document
+---
+
+load the necessary libraries 
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(httr)
+```
+
+reading in data from the web
+
+```{r}
+# first define the url -> where the data exists
+
+url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+drug_use_html = read_html(url)
+
+# then import the dataset -> bring in entire html file
+
+drug_use_html
+```
+
+```{r}
+drug_use_html |>
+  html_table()
+
+table_marj = 
+  drug_use_html |> 
+  html_table() |> 
+  first() |>
+  slice(-1) 
+
+table_marj
+```
+
+Import Star Wars  ...
+
+```{r}
+swm_html = 
+  read_html("https://www.imdb.com/list/ls070150896/")
+
+swm_html =
+  read_html
+
+```
+
