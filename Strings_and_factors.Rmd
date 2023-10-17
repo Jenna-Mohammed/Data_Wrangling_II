@@ -1,0 +1,183 @@
+---
+title: "Strings and Factors"
+author: "Jenna Mohammed"
+date: '2023-10-17'
+output: html_document
+---
+
+```{r}
+library(rvest)
+library(p8105.datasets)
+library(tidyverse)
+```
+
+# Strings and Factors 
+
+they both look the same, but strings are just string variables (exactly what they look like)  and factors have a layer of stuff going on underneath
+
+## Strings and Manipulation 
+- run string function on vector 
+
+```{r}
+string_vec = c("my", "name", "is", "jeff")
+
+# 4 observations, 4 
+
+str_detect(string_vec, "jeff")
+
+# detecting if this pattern exists (if "jeff" exists in the string_vec). Finding if something exists
+
+str_replace(string_vec, "jeff", "Jeff")
+
+# changes search from jeff to Jeff
+```
+
+```{r}
+string_vec = c(
+  "i think we all rule for participating",
+  "i think i have been caught",
+  "i think this will be quite fun actually",
+  "it will be fun, i think"
+  )
+
+str_detect(string_vec, "^i think")
+
+# differentiate between the first 3 and the last expression. This (^) indicates the beginning of a line, sousing (^ i think) searches for the expressions that begin with that statement
+
+str_detect(string_vec, "i think$")
+```
+
+```{r}
+string_vec = c(
+  "Time for a Pumpkin Spice Latte!",
+  "went to the #pumpkinpatch last weekend",
+  "Pumpkin Pie is obviously the best pie",
+  "SMASHING PUMPKINS -- LIVE IN CONCERT!!"
+  )
+
+str_detect(string_vec,"[Pp]umpkin")
+
+# uses either uppercase or lowercase [Pp]
+```
+
+```{r}
+string_vec = c(
+  '7th inning stretch',
+  '1st half soon to begin. Texas won the toss.',
+  'she is 5 feet 4 inches tall',
+  '3AM - cant sleep :('
+  )
+
+str_detect(string_vec, "^[0-9][a-zA-Z]")
+
+# any instance that matches a number -> can specify a range [0-9]
+# can do the same with lowercase letters [a-z]
+# spaces are a character, if we want spaces we need to be specific about it
+```
+
+```{r}
+string_vec = c(
+  'Its 7:11 in the evening',
+  'want to go to 7-11?',
+  'my flight is AA711',
+  'NetBios: scanning ip 203.167.114.66'
+  )
+
+str_detect(string_vec, "7.11")
+
+# finding anything that starts with 7 and ends with 11, something in the middle that matches any character at all 
+  # that is what (.) does. Period represents any character at all
+```
+
+```{r}
+string_vec = c(
+  'The CI is [2, 5]',
+  ':-]',
+  ':-[',
+  'I found the answer on pages [6-7]'
+  )
+
+str_detect(string_vec, "\\[")
+
+# any instance where bracket occurs 
+# note that this is a special character by using (\)
+# however, / is also a special character so we need to use two \\ -> (\\)
+# "\\[[0-9] -> would find [6-, and [2,
+
+```
+
+## Factors 
+
+```{r}
+vec_sex = factor(c("male", "male", "female", "female"))
+vec_sex
+
+# shows us the tw levels - male and female
+
+as.numeric(vec_sex)
+
+# changes from female and male to 2 and 1
+
+vec_sex = fct_relevel(vec_sex, "male")
+vec_sex
+
+as.numeric(vec_sex)
+```
+
+## NSDUH
+
+```{r}
+nsduh_url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+
+table_marj = 
+  read_html(nsduh_url) |> 
+  html_table() |> 
+  first() |>
+  slice(-1)
+
+# will give us a list of 15 tables 
+# reads in table 
+```
+
+need to tidy this!
+
+```{r}
+# columns that contain p values are different from others -> exclude them 
+# a trange is a a variable not a column -> two seperate variables in same column to code that out
+
+# first - get rid of columns we don't want, anything that contains string P Values
+
+marj_df = 
+  table_marj |>
+  select(-contains("P Value")) |>
+
+# needs to go from wide format to long format
+  
+  pivot_longer(
+    -State,
+    names_to = "age_year",
+    values_to = "percent"
+  ) |>
+
+# seperate age and year into seperate variables
+
+  separate(age_year, into = c("age", "year"), sep = "\\(") |>
+  mutate(
+    year = str_replace(year, "\\)", ""),
+    percent = str_replace(percent, "[a-b]$", ""),
+    percent = as.numeric(percent)) |>
+  filter(!(State %in% c("Total U.S.", "Northeast", "Midwest", "South", "West")))
+
+```
+
+```{r}
+marj_df |>
+  filter(age == "18-25") |> 
+  mutate(State = fct_reorder(State, percent)) |> 
+  ggplot(aes(x = State, y = percent, color = year)) + 
+    geom_point() + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+# filter the age, 
+```
+
